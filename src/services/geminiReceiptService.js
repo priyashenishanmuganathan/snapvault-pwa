@@ -6,6 +6,11 @@ const genAI =
     import.meta.env.VITE_GEMINI_API_KEY
   );
 
+console.log(
+  "Gemini Key:",
+  import.meta.env.VITE_GEMINI_API_KEY
+);
+
 export const analyzeReceipt =
   async (ocrText) => {
 

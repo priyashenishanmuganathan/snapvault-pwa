@@ -11,6 +11,7 @@ import Budget from "./pages/Budget";
 import Scan from "./pages/Scan";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import TestGemini from "./pages/TestGemini";
 
 // --- Protected Route Guard ---
 function ProtectedRoute({ children }) {
@@ -64,6 +65,7 @@ export default function App() {
           <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/test-gemini" element={<TestGemini />} />
         </Routes>
 
         {/* Global Floating Navigation Bar */}

@@ -1,26 +1,70 @@
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({
+  apiKey: import.meta.env.VITE_GEMINI_API_KEY,
+});
+
 export const analyzeReceipt = async (ocrText) => {
 
-  const response = await fetch(
-    "http://10.255.123.234:8000/analyze-receipt",
-    {
-      method: "POST",
+  const prompt = `
+You are a receipt extraction AI.
 
-      headers: {
-        "Content-Type": "application/json",
-      },
+OCR TEXT:
+${ocrText}
 
-      body: JSON.stringify({
-        ocrText,
-      }),
-    }
-  );
+Extract:
 
-  if (!response.ok) {
+- merchant
+- amount
+- date
+- category
+
+Available Categories:
+Food
+Transport
+Shopping
+Groceries
+Healthcare
+Bills
+Entertainment
+Education
+Others
+
+Return ONLY valid JSON.
+
+Example:
+
+{
+  "merchant": "KFC",
+  "amount": 25.90,
+  "date": "2026-06-13",
+  "category": "Food"
+}
+`;
+
+  const response =
+    await ai.models.generateContent({
+
+      model: "gemini-3.5-flash",
+
+      contents: prompt,
+
+    });
+
+  const text =
+    response.text;
+
+  const match =
+    text.match(/\{[\s\S]*\}/);
+
+  if (!match) {
 
     throw new Error(
-      `HTTP ${response.status}`
+      "No JSON returned by Gemini"
     );
   }
 
-  return await response.json();
+  return JSON.parse(
+    match[0]
+  );
 };
