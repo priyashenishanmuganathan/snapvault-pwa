@@ -1,162 +1,126 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getDashboardStats, getReceipts } from "../firebase/receiptService";
-import { auth, logoutUser } from "../firebase/authService";
+import { onAuthStateChanged } from "firebase/auth";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { auth, logoutUser } from "../firebase/authService";
+import { getDashboardStats, getReceipts } from "../firebase/receiptService";
 import { generatePDFReport } from "../services/pdfService";
+import HeroSection from "../components/HeroSection";
+import StatsCards from "../components/StatsCards";
+import FinancialHealth from "../components/FinancialHealth";
+import AIInsights from "../components/AIInsights";
 
 const COLORS = ["#8B5CF6", "#A855F7", "#C084FC", "#6366F1", "#7C3AED", "#9333EA"];
 
 export default function Dashboard() {
   const navigate = useNavigate();
-
-  const [stats, setStats] = useState({
-    totalExpenses: 0,
-    receiptCount: 0,
-    averageExpense: 0,
-  });
-
+  const [stats, setStats] = useState({ totalExpenses: 0, receiptCount: 0, averageExpense: 0 });
   const [categoryData, setCategoryData] = useState([]);
   const [recentReceipts, setRecentReceipts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth.currentUser) {
-      navigate("/login");
-      return;
-    }
-    loadDashboard();
+    // Standard Firebase observer pattern prevents race conditions on initial page load
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        navigate("/login");
+      } else {
+        loadDashboard();
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [navigate]);
+
+  const loadDashboard = async () => {
+    try {
+      const dashboardStats = await getDashboardStats();
+      const receipts = await getReceipts();
+      
+      setStats(dashboardStats);
+      setRecentReceipts(receipts.slice(-5).reverse());
+
+      // Parse and aggregate categories
+      const categoryTotals = {};
+      receipts.forEach((receipt) => {
+        const category = receipt.category || "Others";
+        const amount = Number(receipt.amount || 0);
+        categoryTotals[category] = (categoryTotals[category] || 0) + amount;
+      });
+
+      const chartData = Object.entries(categoryTotals).map(([name, value]) => ({ name, value }));
+      setCategoryData(chartData);
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
       await logoutUser();
       navigate("/login");
     } catch (error) {
-      console.error(error);
+      console.error("Logout failed:", error);
     }
   };
 
-  const loadDashboard = async () => {
-    const dashboardStats = await getDashboardStats();
-    setStats(dashboardStats);
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center text-white bg-slate-950">
+        <div className="text-xl font-medium animate-pulse">Loading Dashboard...</div>
+      </div>
+    );
+  }
 
-    const receipts = await getReceipts();
-    setRecentReceipts(receipts.slice(-5).reverse());
-
-    const categoryTotals = {};
-    receipts.forEach((receipt) => {
-      const category = receipt.category || "Others";
-      const amount = Number(receipt.amount || 0);
-
-      if (!categoryTotals[category]) {
-        categoryTotals[category] = 0;
-      }
-      categoryTotals[category] += amount;
-    });
-
-    const chartData = Object.entries(categoryTotals).map(([name, value]) => ({
-      name,
-      value,
-    }));
-
-    setCategoryData(chartData);
-  };
-
-  const topCategory = categoryData.length > 0
-    ? [...categoryData].sort((a, b) => b.value - a.value)[0]
+  const topCategory = categoryData.length > 0 
+    ? [...categoryData].sort((a, b) => b.value - a.value)[0] 
     : null;
 
   return (
-    <div className="p-6 text-white max-w-7xl mx-auto">
-      {/* Header Section */}
-      <div className="flex justify-between items-center mt-10 mb-8">
-        <div>
-          <p className="text-violet-400 text-sm uppercase tracking-widest">
-            Smart Receipt Management
-          </p>
-          <h1 className="text-5xl font-bold tracking-tight mt-2">SnapVault</h1>
-          <p className="text-slate-400 mt-2">{auth.currentUser?.email}</p>
-        </div>
-        <div className="flex gap-3">
-
-  <button
-    onClick={() =>
-      generatePDFReport(
-        stats,
-        categoryData,
-        recentReceipts
-      )
-    }
-    className="
-      bg-green-600
-      hover:bg-green-500
-      px-5
-      py-3
-      rounded-2xl
-      transition
-    "
-  >
-    Export PDF
-  </button>
-
-  <button
-    onClick={handleLogout}
-    className="
-      bg-violet-600
-      hover:bg-violet-500
-      px-5
-      py-3
-      rounded-2xl
-      transition
-    "
-  >
-    Logout
-  </button>
-
-  <button
-  onClick={() =>
-    navigate("/ai-chat")
-  }
-  className="
-    bg-indigo-600
-    hover:bg-indigo-500
-    px-5
-    py-3
-    rounded-2xl
-  "
->
-  AI Assistant
-</button>
-
-</div>
-
-
-
-        
+    <div className="mx-auto max-w-7xl p-6 text-white">
+      {/* Top Action Buttons */}
+      <div className="mb-6 flex justify-end gap-3">
+        <button
+          onClick={() => generatePDFReport(stats, categoryData, recentReceipts)}
+          className="rounded-2xl bg-green-600 px-5 py-3 transition hover:bg-green-500 font-medium"
+        >
+          Export PDF
+        </button>
+        <button
+          onClick={() => navigate("/ai-chat")}
+          className="rounded-2xl bg-indigo-600 px-5 py-3 transition hover:bg-indigo-500 font-medium"
+        >
+          AI Assistant
+        </button>
+        <button
+          onClick={handleLogout}
+          className="rounded-2xl bg-violet-600 px-5 py-3 transition hover:bg-violet-500 font-medium"
+        >
+          Logout
+        </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid md:grid-cols-3 gap-5">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl">
-          <p className="text-slate-400">Total Expenses</p>
-          <h2 className="text-4xl font-bold mt-3">RM {stats.totalExpenses.toFixed(2)}</h2>
-        </div>
+      {/* Hero Header */}
+      <HeroSection
+        email={auth.currentUser?.email}
+        totalExpenses={stats.totalExpenses}
+        receiptCount={stats.receiptCount}
+      />
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl">
-          <p className="text-slate-400">Receipts</p>
-          <h2 className="text-4xl font-bold mt-3">{stats.receiptCount}</h2>
-        </div>
+      {/* Metrics Layout */}
+      <StatsCards stats={stats} />
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl">
-          <p className="text-slate-400">Average Spend</p>
-          <h2 className="text-4xl font-bold mt-3">RM {stats.averageExpense.toFixed(2)}</h2>
-        </div>
+      {/* Analytical Components */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <FinancialHealth />
+        <AIInsights topCategory={topCategory} stats={stats} />
       </div>
 
-      {/* Chart Section */}
-      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 mt-8">
-        <h2 className="text-2xl font-bold mb-6">Spending Breakdown</h2>
-        <div style={{ width: "100%", height: 350 }}>
+      {/* Data Visualization Breakdown */}
+      <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+        <h2 className="mb-6 text-2xl font-bold">Spending Breakdown</h2>
+        <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -168,7 +132,7 @@ export default function Dashboard() {
                 paddingAngle={4}
               >
                 {categoryData.map((entry, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip />
@@ -177,35 +141,21 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* AI Spending Insight */}
-      <div className="bg-white/5 backdrop-blur-xl border border-violet-500/20 rounded-3xl p-6 mt-8">
-        <h2 className="text-2xl font-bold mb-3">AI Spending Insight</h2>
-        {topCategory ? (
-          <p className="text-lg text-slate-300">
-            Most spending goes to{" "}
-            <span className="text-violet-400 font-bold">{topCategory.name}</span> with{" "}
-            <span className="text-white font-bold">RM {topCategory.value.toFixed(2)}</span>
-          </p>
-        ) : (
-          <p>No receipts found.</p>
-        )}
-      </div>
-
-      {/* Recent Receipts Section */}
-      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 mt-8">
-        <h2 className="text-2xl font-bold mb-4">Recent Receipts</h2>
+      {/* Transaction History Activity */}
+      <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+        <h2 className="mb-4 text-2xl font-bold">Recent Activity</h2>
         {recentReceipts.length === 0 ? (
-          <p>No receipts found.</p>
+          <p className="text-gray-400">No receipts found.</p>
         ) : (
           <div className="space-y-4">
             {recentReceipts.map((receipt) => (
               <div
                 key={receipt.id}
-                className="bg-black/20 border border-white/5 rounded-2xl p-4 flex justify-between items-center"
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:border-violet-500/20"
               >
                 <div>
-                  <p className="font-semibold text-lg">{receipt.merchant}</p>
-                  <span className="bg-violet-500/15 text-violet-300 px-3 py-1 rounded-full text-xs">
+                  <p className="text-lg font-semibold">{receipt.merchant}</p>
+                  <span className="rounded-full bg-violet-500/15 px-3 py-1 text-xs text-violet-300">
                     {receipt.category}
                   </span>
                 </div>
@@ -217,6 +167,14 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Persistent AI Trigger Button */}
+      <button
+        onClick={() => navigate("/ai-chat")}
+        className="fixed bottom-6 right-6 z-50 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-4 shadow-2xl shadow-violet-500/30 transition-all hover:scale-105"
+      >
+        ✨ AI
+      </button>
     </div>
   );
 }
