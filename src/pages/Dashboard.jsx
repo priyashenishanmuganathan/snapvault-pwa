@@ -113,6 +113,21 @@ export default function Dashboard() {
     Logout
   </button>
 
+  <button
+  onClick={() =>
+    navigate("/ai-chat")
+  }
+  className="
+    bg-indigo-600
+    hover:bg-indigo-500
+    px-5
+    py-3
+    rounded-2xl
+  "
+>
+  AI Assistant
+</button>
+
 </div>
 
 
