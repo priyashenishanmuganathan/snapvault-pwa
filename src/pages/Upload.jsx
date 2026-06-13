@@ -29,7 +29,7 @@ export default function Upload() {
   amount: "",
   date: "",
   category: "Others",
-});
+  });
 
   const handleImageChange = async (
     event
