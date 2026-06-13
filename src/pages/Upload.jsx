@@ -24,12 +24,12 @@ export default function Upload() {
   const [showReview, setShowReview] =
     useState(false);
 
-  const [reviewData, setReviewData] =
-    useState({
-      merchant: "",
-      amount: "",
-      category: "Others",
-    });
+  setReviewData({
+  merchant: "",
+  amount: "",
+  date: "",
+  category: "Others",
+});
 
   const handleImageChange = async (
     event
@@ -60,17 +60,20 @@ export default function Upload() {
 
       setReviewData({
 
-        merchant:
-          aiResult.merchant || "",
+  merchant:
+    aiResult.merchant || "",
 
-        amount:
-          aiResult.amount || "",
+  amount:
+    aiResult.amount || "",
 
-        category:
-          aiResult.category ||
-          "Others",
+  date:
+    aiResult.date || "",
 
-      });
+  category:
+    aiResult.category ||
+    "Others",
+
+});
 
       setShowReview(true);
 
@@ -123,8 +126,7 @@ export default function Upload() {
             reviewData.category,
 
           date:
-            new Date()
-              .toLocaleDateString(),
+  reviewData.date,
 
           imageName:
             selectedFile?.name || "",
@@ -454,6 +456,27 @@ export default function Upload() {
                 mb-3
               "
             />
+
+            <input
+  type="date"
+  value={reviewData.date}
+  onChange={(e) =>
+    setReviewData({
+      ...reviewData,
+      date: e.target.value,
+    })
+  }
+  className="
+    w-full
+    bg-black/20
+    border
+    border-white/10
+    text-white
+    p-3
+    rounded-2xl
+    mb-3
+  "
+/>
 
             <select
               value={
