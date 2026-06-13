@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getDashboardStats, getReceipts } from "../firebase/receiptService";
 import { auth, logoutUser } from "../firebase/authService";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { generatePDFReport } from "../services/pdfService";
 
 const COLORS = ["#8B5CF6", "#A855F7", "#C084FC", "#6366F1", "#7C3AED", "#9333EA"];
 
@@ -76,12 +77,47 @@ export default function Dashboard() {
           <h1 className="text-5xl font-bold tracking-tight mt-2">SnapVault</h1>
           <p className="text-slate-400 mt-2">{auth.currentUser?.email}</p>
         </div>
-        <button
-          onClick={handleLogout}
-          className="bg-violet-600 hover:bg-violet-500 px-5 py-3 rounded-2xl transition"
-        >
-          Logout
-        </button>
+        <div className="flex gap-3">
+
+  <button
+    onClick={() =>
+      generatePDFReport(
+        stats,
+        categoryData,
+        recentReceipts
+      )
+    }
+    className="
+      bg-green-600
+      hover:bg-green-500
+      px-5
+      py-3
+      rounded-2xl
+      transition
+    "
+  >
+    Export PDF
+  </button>
+
+  <button
+    onClick={handleLogout}
+    className="
+      bg-violet-600
+      hover:bg-violet-500
+      px-5
+      py-3
+      rounded-2xl
+      transition
+    "
+  >
+    Logout
+  </button>
+
+</div>
+
+
+
+        
       </div>
 
       {/* Stats Grid */}
