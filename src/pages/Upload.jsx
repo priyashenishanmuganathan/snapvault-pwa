@@ -24,11 +24,12 @@ export default function Upload() {
   const [showReview, setShowReview] =
     useState(false);
 
-  setReviewData({
-  merchant: "",
-  amount: "",
-  date: "",
-  category: "Others",
+  const [reviewData, setReviewData] =
+  useState({
+    merchant: "",
+    amount: "",
+    date: "",
+    category: "Others",
   });
 
   const handleImageChange = async (
