@@ -9,6 +9,9 @@ import {
 
 import { app } from "./config";
 
+import { createUserProfile }
+  from "./userService";
+
 export const auth = getAuth(app);
 
 const googleProvider =
@@ -19,11 +22,18 @@ export const registerUser = async (
   password
 ) => {
 
-  return await createUserWithEmailAndPassword(
-    auth,
-    email,
-    password
+  const userCredential =
+    await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+  await createUserProfile(
+    userCredential.user
   );
+
+  return userCredential;
 };
 
 export const loginUser = async (
@@ -41,10 +51,17 @@ export const loginUser = async (
 export const loginWithGoogle =
   async () => {
 
-    return await signInWithPopup(
-      auth,
-      googleProvider
+    const result =
+      await signInWithPopup(
+        auth,
+        googleProvider
+      );
+
+    await createUserProfile(
+      result.user
     );
+
+    return result;
   };
 
 export const logoutUser = async () => {

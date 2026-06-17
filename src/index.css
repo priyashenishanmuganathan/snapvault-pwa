@@ -6,3 +6,18 @@ body {
   background: #0f172a;
   font-family: Arial, sans-serif;
 }
+@keyframes premium-wave {
+  0% { transform: rotate(0deg) translateY(0); }
+  15% { transform: rotate(28deg) stroke-dashoffset(2); }
+  30% { transform: rotate(-12deg) translateY(-1px); }
+  45% { transform: rotate(24deg) stroke-dashoffset(0); }
+  60% { transform: rotate(-6deg) translateY(0); }
+  75% { transform: rotate(14deg); }
+  90% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes avatar-breathe {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(-3px) scaleY(1.02); }
+}

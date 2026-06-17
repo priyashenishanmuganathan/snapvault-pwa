@@ -4,49 +4,61 @@ export default function AIInsights({
 }) {
 
   return (
+    <div className="border border-zinc-900 bg-zinc-900/10 rounded-2xl p-6 relative overflow-hidden">
+      {/* Subtle light arc backing layer */}
+      <div className="absolute -left-12 -top-12 w-32 h-32 bg-indigo-500/[0.02] rounded-full blur-2xl pointer-events-none" />
+      
+      {/* Header Container */}
+      <div className="flex items-center gap-2 border-b border-zinc-900 pb-4 mb-5">
+        <span className="text-sm">✨</span>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+          AI Insights
+        </h2>
+      </div>
 
-    <div
-      className="
-        bg-gradient-to-r
-        from-violet-500/10
-        to-indigo-500/10
+      {/* Row Metrics Grid Layout */}
+      <div className="grid gap-4 sm:grid-cols-3">
 
-        border
-        border-violet-500/20
-
-        rounded-3xl
-
-        p-6
-      "
-    >
-
-      <h2 className="text-2xl font-bold mb-4">
-        AI Insights
-      </h2>
-
-      <div className="space-y-3">
-
-        <div>
-          📈 Highest spending category:
-          {" "}
-          <span className="text-violet-300">
-            {topCategory?.name || "N/A"}
-          </span>
+        {/* Highest Spending Category */}
+        <div className="bg-zinc-900/20 border border-zinc-900 p-4 rounded-xl flex items-center gap-3.5 transition-all">
+          <div className="h-9 w-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs text-indigo-400 shadow-inner shrink-0">
+            📈
+          </div>
+          <div className="min-w-0">
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Highest spending category</span>
+            <span className="text-sm font-semibold text-zinc-200 truncate block mt-0.5">
+              {topCategory?.name || "N/A"}
+            </span>
+          </div>
         </div>
 
-        <div>
-          💰 Potential savings:
-          RM150/month
+        {/* Potential Savings */}
+        <div className="bg-zinc-900/20 border border-zinc-900 p-4 rounded-xl flex items-center gap-3.5 transition-all">
+          <div className="h-9 w-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs text-emerald-400 shadow-inner shrink-0">
+            💰
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Potential savings</span>
+            <span className="text-sm font-bold text-zinc-200 block mt-0.5 font-mono tracking-tight">
+              RM150/month
+            </span>
+          </div>
         </div>
 
-        <div>
-          🎯 Average spend:
-          RM {stats.averageExpense.toFixed(2)}
+        {/* Average Spend */}
+        <div className="bg-zinc-900/20 border border-zinc-900 p-4 rounded-xl flex items-center gap-3.5 transition-all">
+          <div className="h-9 w-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs text-amber-400 shadow-inner shrink-0">
+            🎯
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Average spend</span>
+            <span className="text-sm font-bold text-zinc-200 block mt-0.5 font-mono tracking-tight">
+              RM {stats.averageExpense.toFixed(2)}
+            </span>
+          </div>
         </div>
 
       </div>
-
     </div>
-
   );
 }
