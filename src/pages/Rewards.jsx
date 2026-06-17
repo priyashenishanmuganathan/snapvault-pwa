@@ -12,61 +12,17 @@ import hoodie from "../assets/rewards/hoodie.png";
 import zus from "../assets/rewards/zus.jpg";
 import starbucks from "../assets/rewards/starbucks.jpg";
 
-// Rewards Data Array
 const rewards = [
-  {
-    id: 1,
-    name: "ZUS Voucher",
-    points: 200,
-    image: zus,
-    type: "voucher",
-  },
-  {
-    id: 2,
-    name: "Starbucks Voucher",
-    points: 300,
-    image: starbucks,
-    type: "voucher",
-  },
-  {
-    id: 3,
-    name: "SnapVault Mug",
-    points: 800,
-    image: mug,
-    type: "physical",
-  },
-  {
-    id: 4,
-    name: "SnapVault T-Shirt",
-    points: 1000,
-    image: shirt,
-    type: "physical",
-  },
-  {
-    id: 5,
-    name: "SnapVault Hoodie",
-    points: 2500,
-    image: hoodie,
-    type: "physical",
-  },
-  {
-    id: 6,
-    name: "SnapVault Laptop Bag",
-    points: 3500,
-    image: laptopbag,
-    type: "physical",
-  },
-  {
-    id: 7,
-    name: "SnapVault Power Bank",
-    points: 5000,
-    image: powerbank,
-    type: "physical",
-  },
+  { id: 1, name: "ZUS Voucher", points: 200, image: zus, type: "voucher" },
+  { id: 2, name: "Starbucks Voucher", points: 300, image: starbucks, type: "voucher" },
+  { id: 3, name: "SnapVault Mug", points: 800, image: mug, type: "physical" },
+  { id: 4, name: "SnapVault T-Shirt", points: 1000, image: shirt, type: "physical" },
+  { id: 5, name: "SnapVault Hoodie", points: 2500, image: hoodie, type: "physical" },
+  { id: 6, name: "SnapVault Laptop Bag", points: 3500, image: laptopbag, type: "physical" },
+  { id: 7, name: "SnapVault Power Bank", points: 5000, image: powerbank, type: "physical" },
 ];
 
 export default function Rewards() {
-  // States
   const [userData, setUserData] = useState(null);
   const [selectedReward, setSelectedReward] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -80,37 +36,41 @@ export default function Rewards() {
   useEffect(() => {
     const loadUser = async () => {
       if (!auth.currentUser) return;
-
       const data = await getUserProfile(auth.currentUser.uid);
       setUserData(data);
     };
-
     loadUser();
   }, []);
 
-  // Action Handlers
   const handleRedeem = (reward) => {
     setSelectedReward(reward);
+    // Reset form data whenever a modal opens
+    setFormData({ fullName: "", phone: "", address: "", postcode: "" });
     setShowModal(true);
   };
 
   const confirmRedeem = async () => {
+    // Form validation for physical products
+    if (selectedReward?.type === "physical") {
+      if (!formData.fullName || !formData.phone || !formData.address || !formData.postcode) {
+        alert("Please fill out all shipping fields.");
+        return;
+      }
+    }
+
     try {
-      const success = await deductPoints(
-        auth.currentUser.uid,
-        selectedReward.points
-      );
+      const success = await deductPoints(auth.currentUser.uid, selectedReward.points);
 
       if (!success) {
         alert("Not enough points");
         return;
       }
 
-      await redeemReward(selectedReward, auth.currentUser, formData);
+      // For vouchers, formData goes as empty strings (or you can pass null)
+      await redeemReward(selectedReward, auth.currentUser, selectedReward.type === "physical" ? formData : null);
       alert("Reward Redeemed Successfully!");
       setShowModal(false);
 
-      // Refresh user profile points display
       const updated = await getUserProfile(auth.currentUser.uid);
       setUserData(updated);
     } catch (error) {
@@ -130,7 +90,6 @@ export default function Rewards() {
           <p className="text-xs text-zinc-400 mt-1">Redeem exclusive SnapVault rewards</p>
         </div>
 
-        {/* User Balance Cards Overlay Frame */}
         <div className="flex items-center gap-3 shrink-0">
           <div className="bg-zinc-900/40 border border-zinc-900 rounded-xl p-3 px-4 min-w-[110px]">
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">SnapPoints</span>
@@ -158,20 +117,17 @@ export default function Rewards() {
               key={reward.id}
               className="group bg-zinc-900/10 border border-zinc-900 rounded-2xl overflow-hidden hover:border-zinc-800 transition-all duration-200 flex flex-col justify-between"
             >
-              {/* Media Card Section Viewport */}
               <div className="relative w-full h-48 bg-zinc-950 overflow-hidden shrink-0 border-b border-zinc-900">
                 <img
                   src={reward.image}
                   alt={reward.name}
                   className="w-full h-full object-cover opacity-85 group-hover:scale-105 group-hover:opacity-100 transition-all duration-300 select-none pointer-events-none"
                 />
-                {/* Micro Item Category Tag overlay */}
                 <span className="absolute top-3 left-3 text-[9px] font-bold uppercase tracking-wider bg-zinc-950/80 backdrop-blur-md border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md">
                   {reward.type}
                 </span>
               </div>
 
-              {/* Typography Details Area */}
               <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                 <div className="space-y-1">
                   <h2 className="text-sm font-bold text-zinc-100 group-hover:text-white transition">{reward.name}</h2>
@@ -180,7 +136,6 @@ export default function Rewards() {
                   </p>
                 </div>
 
-                {/* State Driven Interactive Action Buttons */}
                 {canRedeem ? (
                   <button
                     onClick={() => handleRedeem(reward)}
@@ -202,7 +157,7 @@ export default function Rewards() {
         })}
       </div>
 
-      {/* Shipping / Redemption Form Modal Frame */}
+      {/* Unified Modal Frame */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-4">
@@ -213,15 +168,14 @@ export default function Rewards() {
               </h2>
             </div>
 
-            {selectedReward?.type === "physical" && (
+            {selectedReward?.type === "physical" ? (
               <div className="space-y-2.5">
+                <p className="text-zinc-400 text-xs mb-2">Please enter your shipping information below:</p>
                 <input
                   type="text"
                   placeholder="Full Name"
                   value={formData.fullName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fullName: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   className="w-full p-3 rounded-xl bg-zinc-950 text-xs font-medium text-white placeholder:text-zinc-600 border border-zinc-900 focus:border-indigo-500/50 focus:outline-none transition"
                 />
 
@@ -229,18 +183,14 @@ export default function Rewards() {
                   type="text"
                   placeholder="Phone"
                   value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full p-3 rounded-xl bg-zinc-950 text-xs font-medium text-white placeholder:text-zinc-600 border border-zinc-900 focus:border-indigo-500/50 focus:outline-none transition"
                 />
 
                 <textarea
                   placeholder="Address"
                   value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   className="w-full p-3 rounded-xl bg-zinc-950 text-xs font-medium text-white placeholder:text-zinc-600 border border-zinc-900 focus:border-indigo-500/50 focus:outline-none transition h-20 resize-none leading-relaxed"
                 />
 
@@ -248,11 +198,15 @@ export default function Rewards() {
                   type="text"
                   placeholder="Postcode"
                   value={formData.postcode}
-                  onChange={(e) =>
-                    setFormData({ ...formData, postcode: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, postcode: e.target.value })}
                   className="w-full p-3 rounded-xl bg-zinc-950 text-xs font-medium text-white placeholder:text-zinc-600 border border-zinc-900 focus:border-indigo-500/50 focus:outline-none transition"
                 />
+              </div>
+            ) : (
+              <div className="py-2">
+                <p className="text-zinc-300 text-xs leading-relaxed">
+                  This digital voucher will be automatically processed and added to your account claims. No shipping details required!
+                </p>
               </div>
             )}
 
@@ -268,7 +222,7 @@ export default function Rewards() {
                 onClick={confirmRedeem}
                 className="flex-1 bg-zinc-100 hover:bg-white text-zinc-950 py-2 rounded-xl text-xs font-bold transition shadow-sm active:scale-[0.99]"
               >
-                Confirm
+                Confirm Redemption
               </button>
             </div>
 

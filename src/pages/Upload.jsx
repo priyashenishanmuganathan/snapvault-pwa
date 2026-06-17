@@ -9,13 +9,20 @@ export default function Upload() {
   const [ocrText, setOcrText] = useState("");
   const [processStep, setProcessStep] = useState("idle"); // idle | ocr | ai | done
   const [loadingSave, setLoadingSave] = useState(false);
-  const [showReview, setShowReview] = useState(false);
   const [reviewData, setReviewData] = useState({
     merchant: "",
     amount: "",
     date: new Date().toISOString().split("T")[0],
     category: "Others",
   });
+
+  // Handle changes specifically inside manual form inputs
+  const handleInputChange = (field, value) => {
+    setReviewData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   const handleImageChange = async (event) => {
     const file = event.target.files[0];
@@ -24,7 +31,6 @@ export default function Upload() {
     setSelectedFile(file);
     setPreview(URL.createObjectURL(file));
     setOcrText("");
-    setShowReview(false);
     setProcessStep("ocr");
 
     try {
@@ -44,7 +50,6 @@ export default function Upload() {
       });
 
       setProcessStep("done");
-      setShowReview(true);
     } catch (error) {
       console.error("Error reading receipt:", error);
       alert("Failed to read the receipt image.");
@@ -72,8 +77,7 @@ export default function Upload() {
 
       alert("Receipt Saved Successfully");
       
-      // Reset everything back to empty
-      setShowReview(false);
+      // Complete form state clean reset
       setSelectedFile(null);
       setPreview(null);
       setOcrText("");
@@ -93,152 +97,160 @@ export default function Upload() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl p-6 text-white">
-      {/* Header Section using your original wording */}
-      <div className="mt-10 mb-8">
-        <p className="text-sm font-semibold uppercase tracking-widest text-violet-400">Smart OCR</p>
-        <h1 className="mt-2 text-5xl font-bold tracking-tight">Upload Receipt</h1>
-        <p className="mt-2 text-slate-400">AI-powered receipt extraction</p>
-      </div>
+    <div className="p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6 md:space-y-8 pb-24 text-zinc-100">
+      
+      {/* Header View */}
+      <header className="border-b border-zinc-900 pb-5">
+        <h1 className="text-xl font-bold tracking-tight text-white">Upload Receipt</h1>
+        <p className="text-xs text-zinc-400 mt-1">Add expenses automatically via AI extraction or input them manually</p>
+      </header>
 
-      {/* Simple Status Tracker Step Bar */}
+      {/* Dynamic Smart Processing Pipeline Indicator Bar */}
       {processStep !== "idle" && (
-        <div className="mb-6 grid grid-cols-3 gap-3 rounded-2xl bg-white/5 p-3 text-center text-xs font-mono border border-white/5 backdrop-blur-xl">
-          <div className={`rounded-xl p-2.5 transition-all duration-300 ${processStep === "ocr" ? "bg-violet-600 text-white animate-pulse shadow-md shadow-violet-600/30" : "bg-black/30 text-slate-500"}`}>
-            📝 Reading Image Text
+        <div className="grid grid-cols-3 gap-2 rounded-xl bg-zinc-900/30 p-2 text-center text-[11px] font-medium border border-zinc-900">
+          <div className={`py-2 rounded-lg transition-all ${processStep === "ocr" ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 animate-pulse" : "text-zinc-600 bg-zinc-950/20"}`}>
+            Reading Text
           </div>
-          <div className={`rounded-xl p-2.5 transition-all duration-300 ${processStep === "ai" ? "bg-violet-600 text-white animate-pulse shadow-md shadow-violet-600/30" : "bg-black/30 text-slate-500"}`}>
-            🧠 AI Analyzing Data
+          <div className={`py-2 rounded-lg transition-all ${processStep === "ai" ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 animate-pulse" : "text-zinc-600 bg-zinc-950/20"}`}>
+            AI Extracting
           </div>
-          <div className={`rounded-xl p-2.5 transition-all duration-300 ${processStep === "done" ? "bg-emerald-600 text-white" : "bg-black/30 text-slate-500"}`}>
-            ✅ Ready to Review
+          <div className={`py-2 rounded-lg transition-all ${processStep === "done" ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold" : "text-zinc-600 bg-zinc-950/20"}`}>
+            Review Ready
           </div>
         </div>
       )}
 
-      <div className="space-y-6">
-        {/* Upload Dropzone Area */}
-        <label className="group block border-2 border-dashed border-violet-500/30 bg-white/5 backdrop-blur-xl rounded-3xl p-12 text-center cursor-pointer hover:border-violet-400 hover:bg-white/[0.07] transition-all duration-300">
-          <div className="space-y-4">
-            <div className="text-5xl transition-transform duration-300 group-hover:scale-110">📤</div>
-            <h2 className="text-xl font-semibold">Upload Receipt</h2>
-            <p className="text-sm text-slate-400 max-w-sm mx-auto">
-              Tap to choose a receipt image or drag it here to begin.
-            </p>
+      {/* Main Two-Column Layout Grid */}
+      <div className="grid gap-8 lg:grid-cols-12 items-start">
+        
+        {/* ========================================================================= */}
+        {/* LEFT COLUMN: MANUAL ENTRY PANEL (FIX)                                      */}
+        {/* ========================================================================= */}
+        <section className="lg:col-span-5 bg-zinc-900/10 border border-zinc-900 rounded-2xl p-5 sm:p-6 space-y-4">
+          <div className="border-b border-zinc-900 pb-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Receipt Ledger Details</h2>
           </div>
-          <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-        </label>
 
-        {/* Side by side Preview and Output Section */}
-        {preview && (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Left Column: Image Preview */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl flex flex-col items-center justify-center">
-              <h3 className="mb-3 text-xs font-bold tracking-wider uppercase text-slate-400">Receipt Image</h3>
-              <img src={preview} alt="Receipt Input" className="max-h-96 w-auto rounded-2xl object-contain border border-white/10 shadow-2xl" />
+          <div className="space-y-3.5">
+            {/* Merchant */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-400 px-0.5">Merchant Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Starbucks"
+                value={reviewData.merchant}
+                onChange={(e) => handleInputChange("merchant", e.target.value)}
+                className="w-full bg-zinc-900/20 border border-zinc-900 text-zinc-100 placeholder:text-zinc-600 p-3 rounded-xl text-xs font-medium outline-none focus:border-indigo-500/50 transition-all leading-none"
+              />
             </div>
 
-            {/* Right Column: Extracted Text Box */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl flex flex-col">
-              <h3 className="mb-3 text-xs font-bold tracking-wider uppercase text-violet-300">OCR Result</h3>
-              {processStep === "ocr" ? (
-                <div className="flex flex-1 items-center justify-center py-20 text-slate-500 text-sm animate-pulse">
-                  Scanning text from your image...
-                </div>
-              ) : (
-                <div className="max-h-96 flex-1 overflow-y-auto rounded-2xl bg-black/40 p-4 font-mono text-xs leading-relaxed text-slate-300 border border-white/5 whitespace-pre-wrap">
-                  {ocrText || "Waiting for text data..."}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Review Information Modal Popup */}
-      {showReview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="w-full max-w-md rounded-3xl border border-white/15 bg-slate-950 p-6 shadow-2xl">
-            <div className="mb-6">
-              <span className="text-xs font-bold uppercase tracking-widest text-violet-400">Check Details</span>
-              <h2 className="text-2xl font-bold text-white tracking-tight mt-0.5">Review Receipt</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-400 uppercase tracking-wider">Merchant Name</label>
-                <input
-                  type="text"
-                  value={reviewData.merchant}
-                  onChange={(e) => setReviewData({ ...reviewData, merchant: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3.5 text-white focus:border-violet-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-400 uppercase tracking-wider">Amount</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-3.5 text-sm text-slate-500">RM</span>
-                    <input
-                      type="number"
-                      value={reviewData.amount}
-                      onChange={(e) => setReviewData({ ...reviewData, amount: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-3 font-bold text-white focus:border-violet-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-400 uppercase tracking-wider">Date</label>
+            {/* Value Inputs Group Row */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Amount */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-400 px-0.5">Amount</label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3 text-xs font-bold text-zinc-600">RM</span>
                   <input
-                    type="date"
-                    value={reviewData.date}
-                    onChange={(e) => setReviewData({ ...reviewData, date: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white focus:border-violet-500 focus:outline-none"
+                    type="number"
+                    placeholder="0.00"
+                    value={reviewData.amount}
+                    onChange={(e) => handleInputChange("amount", e.target.value)}
+                    className="w-full bg-zinc-900/20 border border-zinc-900 text-zinc-100 placeholder:text-zinc-600 py-3 pl-9 pr-3 rounded-xl text-xs font-bold outline-none focus:border-indigo-500/50 transition-all leading-none font-mono tracking-tight"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-400 uppercase tracking-wider">Category</label>
-                <select
-                  value={reviewData.category}
-                  onChange={(e) => setReviewData({ ...reviewData, category: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3.5 text-white focus:border-violet-500 focus:outline-none"
-                >
-                  <option value="Food">Food</option>
-                  <option value="Transport">Transport</option>
-                  <option value="Shopping">Shopping</option>
-                  <option value="Groceries">Groceries</option>
-                  <option value="Healthcare">Healthcare</option>
-                  <option value="Bills">Bills</option>
-                  <option value="Entertainment">Entertainment</option>
-                  <option value="Education">Education</option>
-                  <option value="Others">Others</option>
-                </select>
+              {/* Date */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-400 px-0.5">Date</label>
+                <input
+                  type="date"
+                  value={reviewData.date}
+                  onChange={(e) => handleInputChange("date", e.target.value)}
+                  className="w-full bg-zinc-900/20 border border-zinc-900 text-zinc-100 p-2.5 rounded-xl text-xs font-medium outline-none focus:border-indigo-500/50 transition-all font-mono"
+                />
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="mt-8 flex gap-3">
-              <button
-                onClick={() => { setShowReview(false); setProcessStep("idle"); }}
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3.5 font-medium text-slate-300 transition hover:bg-white/10"
+            {/* Category */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-400 px-0.5">Category</label>
+              <select
+                value={reviewData.category}
+                onChange={(e) => handleInputChange("category", e.target.value)}
+                className="w-full bg-zinc-900/20 border border-zinc-900 text-zinc-100 p-3 rounded-xl text-xs font-medium outline-none focus:border-indigo-500/50 transition-all"
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmSave}
-                disabled={loadingSave}
-                className="flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3.5 font-bold tracking-wide shadow-lg shadow-indigo-600/20 transition hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50"
-              >
-                {loadingSave ? "Saving..." : "Save Receipt"}
-              </button>
+                <option value="Food" className="bg-zinc-950">Food</option>
+                <option value="Transport" className="bg-zinc-950">Transport</option>
+                <option value="Shopping" className="bg-zinc-950">Shopping</option>
+                <option value="Groceries" className="bg-zinc-950">Groceries</option>
+                <option value="Healthcare" className="bg-zinc-950">Healthcare</option>
+                <option value="Bills" className="bg-zinc-950">Bills</option>
+                <option value="Entertainment" className="bg-zinc-950">Entertainment</option>
+                <option value="Education" className="bg-zinc-950">Education</option>
+                <option value="Others" className="bg-zinc-950">Others</option>
+              </select>
             </div>
           </div>
+
+          {/* Submission CTA Frame Button */}
+          <div className="pt-3 border-t border-zinc-900/60">
+            <button
+              onClick={handleConfirmSave}
+              disabled={loadingSave}
+              className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-bold py-3 rounded-xl text-xs transition active:scale-[0.99] disabled:opacity-50 shadow-sm"
+            >
+              {loadingSave ? "Saving..." : "Save Receipt"}
+            </button>
+          </div>
+        </section>
+
+        {/* ========================================================================= */}
+        {/* RIGHT COLUMN: AI UPLOAD PIPELINE GRAPHICS AND PREVIEWS                    */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-7 space-y-6">
+          
+          {/* File Upload Target Dropzone Box */}
+          <label className="group block border border-dashed border-zinc-800 bg-zinc-900/10 rounded-2xl p-8 sm:p-12 text-center cursor-pointer hover:border-zinc-700 hover:bg-zinc-900/20 transition-all duration-200">
+            <div className="space-y-3">
+              <div className="text-3xl transition-transform duration-200 group-hover:scale-105">📤</div>
+              <h3 className="text-sm font-bold text-zinc-200">Scan via Smart OCR</h3>
+              <p className="text-xs text-zinc-500 max-w-xs mx-auto leading-relaxed">
+                Choose a receipt image file or drag it directly here to scan content parameters.
+              </p>
+            </div>
+            <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+          </label>
+
+          {/* Contextual Visualizer Workspace */}
+          {preview && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Media File Captured Image Frame */}
+              <div className="rounded-xl border border-zinc-900 bg-zinc-950/40 p-4 flex flex-col items-center justify-center">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 px-1 mb-2.5 mr-auto">Image Capture</span>
+                <img src={preview} alt="Receipt Input" className="max-h-64 w-auto rounded-lg object-contain border border-zinc-900 shadow-lg select-none pointer-events-none" />
+              </div>
+
+              {/* Live OCR Text Logger Feed Box */}
+              <div className="rounded-xl border border-zinc-900 bg-zinc-950/40 p-4 flex flex-col h-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 px-1 mb-2.5">AI OCR String Array Feed</span>
+                {processStep === "ocr" ? (
+                  <div className="flex flex-1 items-center justify-center py-16 text-zinc-600 text-xs animate-pulse font-mono">
+                    Executing scan streams...
+                  </div>
+                ) : (
+                  <div className="max-h-64 flex-1 overflow-y-auto rounded-lg bg-zinc-950 border border-zinc-900 p-3 font-mono text-[11px] leading-relaxed text-zinc-400 whitespace-pre-wrap custom-scrollbar">
+                    {ocrText || "Awaiting file inputs..."}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
         </div>
-      )}
+
+      </div>
     </div>
   );
 }
