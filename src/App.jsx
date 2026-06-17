@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
-import { Home, Upload, ScanLine, History, Wallet, Gift, MessageSquareCode, User } from "lucide-react";
+import { Home, Upload, ScanLine, History, Wallet, Gift, MessageSquareCode, User, Menu, X } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, logoutUser } from "./firebase/authService";
 
@@ -46,6 +46,12 @@ function ProtectedRoute({ children }) {
 // --- App Navigation Sidebar Layout Manager ---
 function AppLayout({ user }) {
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close the mobile drawer instantly whenever a route changes
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -55,7 +61,6 @@ function AppLayout({ user }) {
     }
   };
 
-  // Helper component for matching links cleanly with their labels
   const SidebarLink = ({ to, label, icon: Icon }) => {
     const isActive = location.pathname === to || (to === "/" && location.pathname === "/dashboard");
     return (
@@ -74,82 +79,134 @@ function AppLayout({ user }) {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-[#0A0A0F] text-zinc-100 overflow-hidden">
+    <div className="flex h-screen w-screen bg-[#0A0A0F] text-zinc-100 overflow-hidden relative">
       
-      {/* PERSISTENT FULL-WIDTH APP SIDEBAR */}
+      {/* ========================================================================= */}
+      {/* GLOBAL RESPONSIVE SIDEBAR (DESKTOP INLINE, MOBILE SLIDE OUT DRAWER)      */}
+      {/* ========================================================================= */}
       {user && (
-        <aside className="w-64 border-r border-zinc-900 bg-[#09090e]/80 backdrop-blur-xl flex flex-col justify-between p-6 shrink-0 z-40">
-          
-          <div className="space-y-8">
-            {/* Logo Heading Container */}
-            <div className="flex items-center gap-3 px-2">
-              <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-md">
-                <span className="text-xs font-black text-white">S</span>
+        <>
+          {/* Mobile Tinted Backdrop Sheet */}
+          {sidebarOpen && (
+            <div 
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-300"
+            />
+          )}
+
+          <aside 
+            className={`fixed lg:static top-0 bottom-0 left-0 w-64 border-r border-zinc-900 bg-[#09090e]/95 lg:bg-[#09090e]/80 backdrop-blur-xl flex flex-col justify-between p-6 shrink-0 z-50 transition-transform duration-300 ease-in-out ${
+              sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+            }`}
+          >
+            <div className="space-y-8">
+              {/* Branding Header Container */}
+              <div className="flex items-center justify-between px-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-md">
+                    <span className="text-xs font-black text-white">S</span>
+                  </div>
+                  <span className="text-sm font-bold tracking-tight text-white">SnapVault</span>
+                </div>
+                
+                {/* Close Button Trigger for phone screens */}
+                <button 
+                  onClick={() => setSidebarOpen(false)}
+                  className="lg:hidden p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <span className="text-sm font-bold tracking-tight text-white">SnapVault</span>
+
+              {/* Navigation Menu Links */}
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider px-2 mb-2">Menu</p>
+                
+                <SidebarLink to="/" label="Dashboard" icon={Home} />
+                <SidebarLink to="/upload" label="Upload Receipt" icon={Upload} />
+                <SidebarLink to="/scan" label="Quick Scan" icon={ScanLine} />
+                <SidebarLink to="/history" label="Activity Ledger" icon={History} />
+                <SidebarLink to="/budget" label="Budget Wallet" icon={Wallet} />
+                <SidebarLink to="/rewards" label="Rewards Store" icon={Gift} />
+                <SidebarLink to="/ai-chat" label="AI Assistant" icon={MessageSquareCode} />
+              </div>
             </div>
 
-            {/* Structured Navigation Hub Stack */}
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider px-2 mb-2">Menu</p>
-              
-              <SidebarLink to="/" label="Dashboard" icon={Home} />
-              <SidebarLink to="/upload" label="Upload Receipt" icon={Upload} />
-              <SidebarLink to="/scan" label="Quick Scan" icon={ScanLine} />
-              <SidebarLink to="/history" label="Activity Ledger" icon={History} />
-              <SidebarLink to="/budget" label="Budget Wallet" icon={Wallet} />
-              <SidebarLink to="/rewards" label="Rewards Store" icon={Gift} />
-              <SidebarLink to="/ai-chat" label="AI Assistant" icon={MessageSquareCode} />
-            </div>
-          </div>
-
-          {/* User Section Identity Footprint Container */}
-          <div className="border-t border-zinc-900 pt-4 space-y-3">
-            <Link 
-              to="/profile" 
-              className={`flex items-center gap-3 p-2 rounded-xl hover:bg-zinc-900/60 transition-all ${
-                location.pathname === "/profile" ? "bg-zinc-900/40 border border-zinc-800" : ""
-              }`}
-            >
-              <div className="h-8 w-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-sm text-indigo-400 shrink-0">
-                {user.email?.charAt(0).toUpperCase() || "U"}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-zinc-200 truncate">{user.email?.split('@')[0]}</p>
-                <p className="text-[10px] text-zinc-500 truncate mt-0.5">{user.email}</p>
-              </div>
-            </Link>
-
-            {/* Quick Session Management Footer Links */}
-            <div className="flex items-center justify-between px-2 text-[10px] font-medium text-zinc-500">
-              <Link to="/profile" className="hover:text-zinc-200 transition flex items-center gap-1">
-                <User className="h-3 w-3" /> Profile
+            {/* Profile Bottom Identity Management Badge */}
+            <div className="border-t border-zinc-900 pt-4 space-y-3">
+              <Link 
+                to="/profile" 
+                className={`flex items-center gap-3 p-2 rounded-xl hover:bg-zinc-900/60 transition-all ${
+                  location.pathname === "/profile" ? "bg-zinc-900/40 border border-zinc-800" : ""
+                }`}
+              >
+                <div className="h-8 w-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-sm text-indigo-400 shrink-0">
+                  {user.email?.charAt(0).toUpperCase() || "U"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-zinc-200 truncate">{user.email?.split('@')[0]}</p>
+                  <p className="text-[10px] text-zinc-500 truncate mt-0.5">{user.email}</p>
+                </div>
               </Link>
-              <span className="text-zinc-800">•</span>
-              <button onClick={handleLogout} className="hover:text-red-400 transition">
-                Sign Out
-              </button>
-            </div>
-          </div>
 
-        </aside>
+              <div className="flex items-center justify-between px-2 text-[10px] font-medium text-zinc-500">
+                <Link to="/profile" className="hover:text-zinc-200 transition flex items-center gap-1">
+                  <User className="h-3 w-3" /> Profile
+                </Link>
+                <span className="text-zinc-800">•</span>
+                <button onClick={handleLogout} className="hover:text-red-400 transition">
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </aside>
+        </>
       )}
 
-      {/* CORE CONTENT APP SLOT VIEWPORT */}
-      <main className="flex-1 overflow-y-auto relative min-w-0">
-        <Routes>
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
-          <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
-          <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-          <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
-        </Routes>
-      </main>
+      {/* ========================================================================= */}
+      {/* MAIN LAYOUT CANVAS AND CONTENT CONTAINER                                  */}
+      {/* ========================================================================= */}
+      <div className="flex-1 flex flex-col h-full min-w-0">
+        
+        {/* Dynamic Global Header Bar (Only visible on Mobile viewports) */}
+        {user && (
+          <header className="lg:hidden w-full border-b border-zinc-900 bg-[#09090e]/60 backdrop-blur-xl p-4 px-6 flex items-center justify-between shrink-0 z-30">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="p-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition active:scale-95"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+            
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-5 rounded-md bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-md">
+                <span className="text-[10px] font-black text-white">S</span>
+              </div>
+              <span className="text-xs font-bold tracking-tight text-white">SnapVault</span>
+            </div>
+
+            <Link to="/profile" className="h-6 w-6 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400">
+              {user.email?.charAt(0).toUpperCase()}
+            </Link>
+          </header>
+        )}
+
+        {/* Dedicated Route Workspace */}
+        <main className="flex-1 overflow-y-auto relative min-w-0">
+          <Routes>
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
+            <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+            <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
+          </Routes>
+        </main>
+      </div>
 
     </div>
   );
@@ -161,7 +218,7 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+      setUser(currentUser); // <-- Fixed typo from "user" to "setUser"
     });
     return () => unsubscribe();
   }, []);
