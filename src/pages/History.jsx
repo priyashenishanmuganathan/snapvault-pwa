@@ -7,13 +7,21 @@ export default function History() {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [sortOrder, setSortOrder] = useState("newest");
   
-  // New Filter Features
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  // Pagination Architecture
+  const [currentPage, setCurrentPage] = useState(1);
+  const nodesPerPage = 8;
 
   useEffect(() => {
     loadReceipts();
   }, []);
+
+  // Reset page layout matrix whenever structural filter states change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, categoryFilter, startDate, endDate, sortOrder]);
 
   const loadReceipts = async () => {
     try {
@@ -24,16 +32,12 @@ export default function History() {
     }
   };
 
-  // Helper calculation for the latest added dashboard metrics
-  const latestReceipts = [...receipts].reverse().slice(0, 5);
-
-  // Consolidated Filtering Logic
+  // Consolidated Filtering Logic Block
   const filteredReceipts = receipts
     .filter((receipt) => {
       const matchesSearch = receipt.merchant?.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === "All" || receipt.category === categoryFilter;
       
-      // Date constraints filtering
       if (!receipt.date) return matchesSearch && matchesCategory;
       const receiptTime = new Date(receipt.date).getTime();
       const startConstrain = startDate ? new Date(startDate).getTime() : null;
@@ -52,12 +56,17 @@ export default function History() {
       return 0;
     });
 
+  // Calculate local paginated boundaries
+  const indexOfLastNode = currentPage * nodesPerPage;
+  const indexOfFirstNode = indexOfLastNode - nodesPerPage;
+  const currentPaginatedNodes = filteredReceipts.slice(indexOfFirstNode, indexOfLastNode);
+  const totalPages = Math.ceil(filteredReceipts.length / nodesPerPage);
+
   const totalSpent = filteredReceipts.reduce(
     (sum, receipt) => sum + Number(receipt.amount || 0), 
     0
   );
 
-  // New Export Utility Feature
   const exportFilteredJSON = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filteredReceipts, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -68,7 +77,6 @@ export default function History() {
     downloadAnchor.remove();
   };
 
-  // Quick reset utility handler
   const resetFilters = () => {
     setSearch("");
     setCategoryFilter("All");
@@ -80,160 +88,139 @@ export default function History() {
   const isFilterActive = search !== "" || categoryFilter !== "All" || startDate !== "" || endDate !== "";
 
   return (
-    <div className="mx-auto max-w-6xl p-6 text-white animate-fade-in">
+    <div className="min-h-screen bg-[#07070C] text-[#F2F3F7] p-4 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-6 pb-24 selection:bg-[#5B8CFF]/30">
       
-      {/* Header Viewport */}
-      <div className="mt-10 mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      {/* ── Page Header Module ── */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C1E27]/60 pb-6">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-widest text-violet-400">Transaction Records</p>
-          <h1 className="mt-2 text-5xl font-bold tracking-tight">Receipt History</h1>
-          <p className="mt-2 text-slate-400">Search, filter, and review your historical company expenses.</p>
+          <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#5C6072]">Data Ingestion History</div>
+          <h1 className="text-2xl font-bold tracking-tight text-white mt-1">Transaction Records</h1>
+          <p className="text-xs text-[#9498A8] mt-0.5">Review, filter, and export verified ledger objects.</p>
         </div>
         <button
           onClick={exportFilteredJSON}
-          className="w-full rounded-2xl bg-violet-600 px-5 py-3.5 font-medium transition hover:bg-violet-500 sm:w-auto"
+          className="bg-[#1C1E27] hover:bg-[#252834] text-xs font-mono text-[#F2F3F7] border border-[#2D313F] px-4 py-2.5 rounded-xl transition duration-150 flex items-center gap-2 self-start sm:self-auto shadow-md"
         >
-          📦 Export Filtered Data
+          <span>⚡</span> EXPORT DATABASE (.JSON)
         </button>
-      </div>
+      </header>
 
-      {/* Recents Widget Slider Accordion */}
-      <div className="mb-8 rounded-3xl border border-violet-500/20 bg-white/5 p-6 backdrop-blur-xl">
-        <h2 className="mb-4 text-xl font-bold text-violet-400">Latest Added Receipts</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
-          {latestReceipts.map((receipt) => (
-            <div key={`latest-${receipt.id}`} className="flex flex-col justify-between rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div>
-                <h3 className="truncate font-bold text-slate-100">{receipt.merchant}</h3>
-                <p className="text-xs text-violet-300">{receipt.category}</p>
-              </div>
-              <div className="mt-3 flex items-end justify-between">
-                <span className="text-xs text-slate-500">{receipt.date || "No Date"}</span>
-                <span className="font-bold text-emerald-400">RM {Number(receipt.amount || 0).toFixed(2)}</span>
-              </div>
-            </div>
-          ))}
+      {/* ── Telemetry Quick-Look Summary Metrics ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-[#0D0E14] border border-[#1C1E27] rounded-xl p-4 flex flex-col justify-between">
+          <span className="text-[9px] font-mono uppercase tracking-wider text-[#5C6072]">Match Count</span>
+          <span className="text-lg font-bold font-mono text-white mt-1">
+            {filteredReceipts.length} <span className="text-xs font-normal text-[#5C6072]">nodes matched</span>
+          </span>
+        </div>
+        <div className="bg-[#0D0E14] border border-[#1C1E27] rounded-xl p-4 flex flex-col justify-between sm:col-span-2 bg-gradient-to-r from-[#0D0E14] to-[#5B8CFF]/[0.02]">
+          <span className="text-[9px] font-mono uppercase tracking-wider text-[#5C6072]">Aggregate Billed Outflow</span>
+          <span className="text-lg font-bold font-mono text-[#5B8CFF] mt-1">
+            RM {totalSpent.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
         </div>
       </div>
 
-      {/* Numerical Metrics Summary Block */}
-      <div className="mb-8 grid grid-cols-2 gap-4">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
-          <p className="text-sm font-medium text-slate-400">Filtered Count</p>
-          <p className="mt-2 text-3xl font-bold">{filteredReceipts.length} <span className="text-sm font-normal text-slate-500">records</span></p>
-        </div>
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
-          <p className="text-sm font-medium text-slate-400">Filtered Total Expenditure</p>
-          <p className="mt-2 text-3xl font-bold text-emerald-400">RM {totalSpent.toFixed(2)}</p>
-        </div>
-      </div>
-
-      {/* Controls & Filter Matrix Toolbox Panel */}
-      <div className="mb-8 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-200">Search Filters Matrix</h3>
+      {/* ── Modern Centralized Filter Matrix Console ── */}
+      <section className="bg-[#0D0E14] border border-[#1C1E27] rounded-xl p-4 sm:p-5 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between border-b border-[#1C1E27]/50 pb-3">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[#9498A8]">Query Sorting & Filter Array</div>
           {isFilterActive && (
-            <button onClick={resetFilters} className="text-sm font-medium text-violet-400 hover:text-violet-300 transition">
-              Reset Filters ↺
+            <button onClick={resetFilters} className="text-[10px] font-mono text-[#5B8CFF] hover:underline transition">
+              CLEAR CONFIGS ↺
             </button>
           )}
         </div>
         
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Column 1: Search Queries */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+          {/* Merchant Search & Category Selection (6 Cols) */}
+          <div className="md:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
               type="text"
-              placeholder="Search merchant name..."
+              placeholder="Search merchant..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-black/20 p-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500"
+              className="w-full rounded-xl border border-[#1C1E27] bg-[#07070C] p-3 px-4 text-xs font-medium text-white placeholder:text-[#5C6072] focus:outline-none focus:border-[#5B8CFF] transition"
             />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-black/20 p-4 text-white focus:outline-none focus:border-violet-500"
+              className="w-full rounded-xl border border-[#1C1E27] bg-[#07070C] p-3 px-4 text-xs font-medium text-[#9498A8] focus:outline-none focus:border-[#5B8CFF] transition cursor-pointer"
             >
-              <option value="All">All Categories</option>
-              <option value="Food">Food</option>
-              <option value="Transport">Transport</option>
-              <option value="Shopping">Shopping</option>
-              <option value="Groceries">Groceries</option>
-              <option value="Bills">Bills</option>
-              <option value="Entertainment">Entertainment</option>
-              <option value="Healthcare">Healthcare</option>
-              <option value="Education">Education</option>
-              <option value="Others">Others</option>
+              <option value="All">All Segments</option>
+              {["Food", "Transport", "Shopping", "Groceries", "Bills", "Entertainment", "Healthcare", "Education", "Others"].map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
           </div>
 
-          {/* Column 2: Date Bounds Constraints */}
-          <div className="space-y-2 rounded-2xl border border-white/5 bg-black/10 p-3">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">Date Interval Filter</label>
-            <div className="flex flex-col gap-2">
-              <input 
-                type="date" 
-                value={startDate} 
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-black/20 p-2.5 text-sm text-white focus:outline-none"
-              />
-              <input 
-                type="date" 
-                value={endDate} 
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-black/20 p-2.5 text-sm text-white focus:outline-none"
-              />
-            </div>
+          {/* Date Bounds Inputs (4 Cols) */}
+          <div className="md:col-span-4 flex items-center gap-1.5 bg-[#07070C] border border-[#1C1E27] rounded-xl p-1.5">
+            <input 
+              type="date" 
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full bg-transparent text-[11px] font-mono text-[#9498A8] focus:outline-none p-1 invert-[0.8] brightness-75"
+            />
+            <span className="text-[#5C6072] text-xs font-mono">→</span>
+            <input 
+              type="date" 
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full bg-transparent text-[11px] font-mono text-[#9498A8] focus:outline-none p-1 invert-[0.8] brightness-75"
+            />
           </div>
 
-          {/* Column 3: Organizing Sorting Layout */}
-          <div className="flex flex-col justify-end">
-            <label className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">Sort Rules</label>
+          {/* Sort Architecture Rules Selector (2 Cols) */}
+          <div className="md:col-span-2">
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-black/20 p-4 text-white focus:outline-none focus:border-violet-500"
+              className="w-full rounded-xl border border-[#1C1E27] bg-[#07070C] p-3 px-4 text-xs font-medium text-[#9498A8] focus:outline-none focus:border-[#5B8CFF] transition cursor-pointer"
             >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="highest">Highest Amount</option>
-              <option value="lowest">Lowest Amount</option>
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="highest">Highest Price</option>
+              <option value="lowest">Lowest Price</option>
             </select>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Main Filtered Database Records Map Grid List */}
-      <div className="space-y-4">
+      {/* ── Main Ingestion Invariant Records Ledger ── */}
+      <div className="space-y-2">
         {filteredReceipts.length === 0 ? (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-12 text-center text-slate-400 backdrop-blur-xl">
-            📭 No data matched your target filter configurations. Try refreshing or clearing variables.
+          <div className="rounded-xl border border-dashed border-[#1C1E27] bg-[#0D0E14]/40 p-12 text-center text-xs font-mono text-[#5C6072]">
+            Telemetry target array returned 0 variables matching your set constraints.
           </div>
         ) : (
-          filteredReceipts.map((receipt) => (
+          currentPaginatedNodes.map((receipt) => (
             <div
               key={receipt.id}
-              className="flex flex-col justify-between gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl transition hover:border-violet-500/30 sm:flex-row sm:items-center"
+              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-[#1C1E27]/70 bg-[#0D0E14] p-4 transition-all duration-150 hover:border-[#1C1E27] hover:bg-gradient-to-r hover:from-[#0D0E14] hover:to-[#5B8CFF]/[0.01]"
             >
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-500/10 text-xl text-violet-400">
-                  📄
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1C1E27]/60 border border-[#1C1E27] text-xs text-[#9498A8] font-mono">
+                  NODE
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight text-white">{receipt.merchant}</h2>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-violet-500/15 px-3 py-0.5 text-xs text-violet-300">
+                <div className="min-w-0">
+                  <h2 className="text-xs font-bold text-[#F2F3F7] group-hover:text-white truncate transition-colors">
+                    {receipt.merchant || "Unknown Entity"}
+                  </h2>
+                  <div className="mt-1 flex items-center gap-2 font-mono text-[10px]">
+                    <span className="text-[#5B8CFF] bg-[#5B8CFF]/10 px-1.5 py-0.5 rounded uppercase font-bold tracking-wide text-[8px]">
                       {receipt.category}
                     </span>
-                    <span className="text-xs text-slate-500">• {receipt.date || "Date Unspecified"}</span>
+                    <span className="text-[#5C6072]">•</span>
+                    <span className="text-[#5C6072]">{receipt.date || "NO_DATE_VECTOR"}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between border-t border-white/5 pt-3 sm:border-none sm:pt-0">
-                <span className="text-xs text-slate-400 sm:hidden">Total Billed</span>
-                <p className="text-3xl font-extrabold tracking-tight text-white">
-                  <span className="text-sm font-semibold text-slate-400 mr-1">RM</span>
+              <div className="flex items-center justify-between sm:justify-end border-t border-[#1C1E27]/40 pt-2.5 sm:border-none sm:pt-0 shrink-0">
+                <span className="text-[10px] font-mono text-[#5C6072] sm:hidden">BALANCE MATRICES</span>
+                <p className="text-sm font-bold font-mono text-white tracking-tight">
+                  <span className="text-[10px] font-normal text-[#5C6072] mr-1">RM</span>
                   {Number(receipt.amount || 0).toFixed(2)}
                 </p>
               </div>
@@ -241,6 +228,32 @@ export default function History() {
           ))
         )}
       </div>
+
+      {/* ── Futuristic Pagination Control Deck ── */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-[#1C1E27]/40 font-mono text-xs text-[#5C6072]">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            className="bg-[#0D0E14] border border-[#1C1E27] text-[#9498A8] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed px-3 py-1.5 rounded-lg transition"
+          >
+            ◀ PREV
+          </button>
+          
+          <span>
+            PAGE <span className="text-white font-bold">{currentPage}</span> OF <span className="text-[#9498A8]">{totalPages}</span>
+          </span>
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            className="bg-[#0D0E14] border border-[#1C1E27] text-[#9498A8] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed px-3 py-1.5 rounded-lg transition"
+          >
+            NEXT ▶
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }
