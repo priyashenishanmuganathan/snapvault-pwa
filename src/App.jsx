@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
-import { Home, Upload, ScanLine, History, Wallet, Gift, MessageSquareCode, User, Menu, X } from "lucide-react";
+import { Home, Upload, ScanLine, History, Wallet, Gift, MessageSquareCode, User, Menu, X, Calendar } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, logoutUser } from "./firebase/authService";
 
@@ -14,6 +14,8 @@ import Register from "./pages/Register";
 import AIChat from "./pages/AIChat";
 import Profile from "./pages/Profile";
 import Rewards from "./pages/Rewards";
+// ── Added the missing CalendarPage import statement here ──
+import CalendarPage from "./pages/CalendarPage"; 
 
 // --- Protected Route Guard ---
 function ProtectedRoute({ children }) {
@@ -86,7 +88,6 @@ function AppLayout({ user }) {
       {/* ========================================================================= */}
       {user && (
         <>
-          {/* Mobile Tinted Backdrop Sheet */}
           {sidebarOpen && (
             <div 
               onClick={() => setSidebarOpen(false)}
@@ -100,16 +101,17 @@ function AppLayout({ user }) {
             }`}
           >
             <div className="space-y-8">
-              {/* Branding Header Container */}
               <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-md">
-                    <span className="text-xs font-black text-white">S</span>
-                  </div>
+                  {/* Replaced initial letter box logo with target static web icon asset */}
+                  <img 
+                    src="/icon-192.png" 
+                    alt="SnapVault Logo" 
+                    className="h-6 w-6 object-contain rounded-md select-none pointer-events-none" 
+                  />
                   <span className="text-sm font-bold tracking-tight text-white">SnapVault</span>
                 </div>
                 
-                {/* Close Button Trigger for phone screens */}
                 <button 
                   onClick={() => setSidebarOpen(false)}
                   className="lg:hidden p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition"
@@ -118,13 +120,13 @@ function AppLayout({ user }) {
                 </button>
               </div>
 
-              {/* Navigation Menu Links */}
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider px-2 mb-2">Menu</p>
                 
                 <SidebarLink to="/" label="Dashboard" icon={Home} />
                 <SidebarLink to="/upload" label="Upload Receipt" icon={Upload} />
                 <SidebarLink to="/scan" label="Quick Scan" icon={ScanLine} />
+                <SidebarLink to="/calendar" label="Calendar" icon={Calendar} />
                 <SidebarLink to="/history" label="Activity Ledger" icon={History} />
                 <SidebarLink to="/budget" label="Budget Wallet" icon={Wallet} />
                 <SidebarLink to="/rewards" label="Rewards Store" icon={Gift} />
@@ -132,7 +134,6 @@ function AppLayout({ user }) {
               </div>
             </div>
 
-            {/* Profile Bottom Identity Management Badge */}
             <div className="border-t border-zinc-900 pt-4 space-y-3">
               <Link 
                 to="/profile" 
@@ -168,7 +169,6 @@ function AppLayout({ user }) {
       {/* ========================================================================= */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Dynamic Global Header Bar (Only visible on Mobile viewports) */}
         {user && (
           <header className="lg:hidden w-full border-b border-zinc-900 bg-[#09090e]/60 backdrop-blur-xl p-4 px-6 flex items-center justify-between shrink-0 z-30">
             <button 
@@ -179,9 +179,12 @@ function AppLayout({ user }) {
             </button>
             
             <div className="flex items-center gap-2">
-              <div className="h-5 w-5 rounded-md bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-md">
-                <span className="text-[10px] font-black text-white">S</span>
-              </div>
+              {/* Replaced mobile heading character placeholder with icon image asset */}
+              <img 
+                src="/icon-192.png" 
+                alt="SnapVault Logo" 
+                className="h-5 w-5 object-contain rounded-md select-none pointer-events-none" 
+              />
               <span className="text-xs font-bold tracking-tight text-white">SnapVault</span>
             </div>
 
@@ -191,7 +194,6 @@ function AppLayout({ user }) {
           </header>
         )}
 
-        {/* Dedicated Route Workspace */}
         <main className="flex-1 overflow-y-auto relative min-w-0">
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -204,6 +206,8 @@ function AppLayout({ user }) {
             <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
+            {/* Added a ProtectedRoute wrapper here to keep the calendar route secure like the rest */}
+            <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>
@@ -212,13 +216,12 @@ function AppLayout({ user }) {
   );
 }
 
-// --- Main Root Core Bootstrapper Entry Point ---
 export default function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser); // <-- Fixed typo from "user" to "setUser"
+      setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
