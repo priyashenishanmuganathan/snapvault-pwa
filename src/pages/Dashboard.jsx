@@ -4,6 +4,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { auth } from "../firebase/authService";
 import { getDashboardStats, getReceipts } from "../firebase/receiptService";
+import { generatePDFReport } from "../services/pdfService"; // Imported PDF generator module
 import StatsCards from "../components/StatsCards";
 import AIInsights from "../components/AIInsights";
 
@@ -104,16 +105,25 @@ export default function Dashboard() {
           </div>
 
           {/* Quick Metrics Stream Deck Layout */}
-          <div className="flex items-center gap-3 bg-gradient-to-r from-[#0D0E14] to-[#0D0E14]/40 border border-[#1C1E27] rounded-xl p-2.5 px-5 self-start md:self-auto backdrop-blur-md shadow-lg group-hover:border-[#5B8CFF]/30 transition-colors duration-300">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 bg-gradient-to-r from-[#0D0E14] to-[#0D0E14]/40 border border-[#1C1E27] rounded-xl p-2.5 px-5 self-start md:self-auto backdrop-blur-md shadow-lg group-hover:border-[#5B8CFF]/30 transition-colors duration-300">
             <div className="text-right">
               <span className="text-[8px] font-mono uppercase tracking-widest text-[#5C6072] block">AGGREGATE TRACKED</span>
               <span className="text-base font-black font-mono text-[#5B8CFF] tracking-tight">RM {stats.totalExpenses.toFixed(2)}</span>
             </div>
-            <div className="w-px h-8 bg-[#1C1E27] mx-2" />
+            <div className="w-px h-8 bg-[#1C1E27] mx-2 hidden sm:block" />
             <div>
               <span className="text-[8px] font-mono uppercase tracking-widest text-[#5C6072] block">LOGGED INVENTORY</span>
               <span className="text-sm font-bold font-mono text-white block mt-0.5">{stats.receiptCount} Units</span>
             </div>
+            <div className="w-px h-8 bg-[#1C1E27] mx-2 hidden sm:block" />
+            
+            {/* Integrated Vector Ledger PDF Action Trigger */}
+            <button
+              onClick={() => generatePDFReport(stats, categoryData, recentReceipts)}
+              className="rounded-lg bg-[#1C1E27] hover:bg-[#5B8CFF]/10 border border-[#1C1E27] hover:border-[#5B8CFF]/30 px-3 py-1.5 text-[10px] font-mono font-bold tracking-wider text-zinc-300 hover:text-[#5B8CFF] transition-all duration-200 active:scale-95 outline-none"
+            >
+              📋 EXPORT REPORT
+            </button>
           </div>
         </header>
 
@@ -123,7 +133,7 @@ export default function Dashboard() {
           <AIInsights topCategory={topCategory} stats={stats} />
         </div>
 
-        {/* ── Central Control Workspace Workspace Grid ── */}
+        {/* ── Central Control Workspace Grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* ── Left Grid Block: Interactive Allocation Distribution Chart (7 Columns) ── */}

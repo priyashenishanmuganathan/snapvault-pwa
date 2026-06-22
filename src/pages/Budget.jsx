@@ -18,7 +18,7 @@ export default function Budget() {
     try {
       const receipts = await getReceipts();
       
-      // Calculate overall total spent
+      // Calculate total amount spent
       const totalSpent = receipts.reduce(
         (sum, receipt) => sum + Number(receipt.amount || 0),
         0
@@ -39,17 +39,14 @@ export default function Budget() {
 
   const saveBudget = () => {
     localStorage.setItem("monthlyBudget", budget.toString());
-    setSaveStatus("Budget Saved Successfully");
+    setSaveStatus("Budget saved successfully!");
     setTimeout(() => setSaveStatus(""), 4000);
   };
 
   const remaining = budget - spent;
-  
-  const percentage = budget > 0 
-    ? Math.min((spent / budget) * 100, 100) 
-    : 0;
+  const percentage = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
 
-  // Calculate math metrics for daily spending speed
+  // Simple daily spending math
   const getBudgetCalculations = () => {
     const today = new Date();
     const currentDay = today.getDate();
@@ -69,30 +66,45 @@ export default function Budget() {
 
   const trackingMetrics = getBudgetCalculations();
 
-  const getProgressColor = () => {
-    if (percentage >= 100) return "from-red-500 to-rose-600 shadow-red-500/50";
-    if (percentage >= 80) return "from-amber-400 to-yellow-500 shadow-amber-500/50";
-    return "from-violet-500 to-indigo-600 shadow-indigo-500/50";
+  // Pick dynamic colors depending on limit thresholds
+  const getThemeColors = () => {
+    if (percentage >= 100) return {
+      bar: "from-red-500 to-rose-600 shadow-red-500/30",
+      border: "border-red-500/30",
+      text: "text-red-400"
+    };
+    if (percentage >= 80) return {
+      bar: "from-amber-400 to-orange-500 shadow-amber-500/30",
+      border: "border-amber-500/30",
+      text: "text-amber-400"
+    };
+    return {
+      bar: "from-violet-500 via-purple-500 to-indigo-500 shadow-violet-500/30",
+      border: "border-violet-500/20",
+      text: "text-violet-400"
+    };
   };
+
+  const currentTheme = getThemeColors();
 
   const getInsight = () => {
     if (percentage >= 100) {
       return {
-        text: "Budget exceeded. Consider reducing discretionary spending.",
-        color: "text-red-400 bg-red-950/20 border-red-500/30",
+        text: "You have exceeded your budget. Try to cut back on non-essential spending.",
+        color: "text-red-400 bg-red-950/20 border-red-500/20",
         icon: "🚨"
       };
     }
     if (percentage >= 80) {
       return {
-        text: "You are approaching your monthly budget limit.",
-        color: "text-yellow-400 bg-yellow-950/20 border-yellow-500/30",
+        text: "You are getting close to your limit. Watch your spending for the rest of the month.",
+        color: "text-amber-400 bg-amber-950/20 border-amber-500/20",
         icon: "⚠️"
       };
     }
     return {
-      text: "Excellent! Your spending remains within a healthy range.",
-      color: "text-emerald-400 bg-emerald-950/20 border-emerald-500/30",
+      text: "Great job! Your monthly spending looks healthy and is well within your budget.",
+      color: "text-emerald-400 bg-emerald-950/20 border-emerald-500/20",
       icon: "✨"
     };
   };
@@ -100,58 +112,61 @@ export default function Budget() {
   const insight = getInsight();
 
   return (
-    <div className="mx-auto max-w-6xl p-6 text-white animate-fade-in">
+    <div className="min-h-screen bg-[#07070C] text-[#F2F3F7] p-4 sm:p-6 md:p-8 max-w-5xl mx-auto space-y-6 pb-24">
       
-      {/* Title & Header Segment */}
-      <div className="mt-10 mb-8">
-        <p className="text-sm font-semibold uppercase tracking-widest text-violet-400">Financial Planning</p>
-        <h1 className="mt-2 text-5xl font-bold tracking-tight">Budget Tracker</h1>
-        <p className="mt-2 text-slate-400">Monitor spending and stay in control</p>
-      </div>
+      {/* Header */}
+      <header className="pb-4 border-b border-[#1C1E27]/60">
+        <p className="text-xs font-bold uppercase tracking-wider text-violet-400">Monthly Plan</p>
+        <h1 className="text-3xl font-black tracking-tight text-white mt-1">Budget Tracker</h1>
+      </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Panel 1: Set Monthly Budget Limit */}
-        <div className="lg:col-span-1 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl flex flex-col justify-between">
+      {/* Main Grid Options */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* Box 1: Set Limit */}
+        <div className="md:col-span-1 border border-[#1C1E27] bg-[#0D0E14] rounded-2xl p-6 flex flex-col justify-between">
           <div>
-            <h2 className="text-xl font-bold tracking-tight mb-2">Monthly Budget</h2>
-            <p className="text-xs text-slate-400 mb-4">Enter your spending limit for the month.</p>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wide">Set Monthly Limit</h2>
+            <p className="text-xs text-slate-400 mt-1 mb-4">Enter how much you want to spend this month.</p>
+            
             <div className="relative">
-              <span className="absolute left-4 top-4 text-slate-400 font-semibold">RM</span>
+              <span className="absolute left-4 top-3.5 text-slate-500 font-bold text-sm">RM</span>
               <input
                 type="number"
                 value={budget || ""}
                 onChange={(e) => setBudget(Number(e.target.value))}
-                className="w-full rounded-2xl border border-white/10 bg-black/40 py-4 pl-12 pr-4 text-xl font-bold text-white placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                className="w-full rounded-xl border border-[#1C1E27] bg-[#07070C] py-3 pl-12 pr-4 text-lg font-bold text-white focus:border-violet-500 focus:outline-none transition-all"
               />
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 space-y-2">
             <button
               onClick={saveBudget}
-              className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 py-4 font-semibold tracking-wide shadow-lg shadow-indigo-600/20 transition hover:from-violet-500 hover:to-indigo-500 active:scale-[0.98]"
+              className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md active:scale-95 transition-all"
             >
-              Save Budget
+              Save Limit
             </button>
             {saveStatus && (
-              <p className="mt-3 text-center text-xs font-semibold text-emerald-400 animate-pulse">
+              <p className="text-center text-[11px] font-medium text-emerald-400 animate-pulse">
                 {saveStatus}
               </p>
             )}
           </div>
         </div>
 
-        {/* Panel 2: Spending Summary Numbers */}
-        <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-          <div className="mb-4 flex items-center justify-between">
+        {/* Box 2: Summary cards */}
+        <div className="md:col-span-2 border border-[#1C1E27] bg-[#0D0E14] rounded-2xl p-6 flex flex-col justify-between">
+          <div className="mb-4 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold tracking-tight">Monthly Spending Summary</h2>
-              <p className="text-xs text-slate-400">Filter your tracking numbers by category.</p>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wide">Spending Overview</h2>
+              <p className="text-xs text-slate-400 mt-1">Track your remaining balance by category.</p>
             </div>
+            
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="rounded-xl border border-white/10 bg-black/40 p-2 text-xs font-medium text-slate-300 focus:outline-none"
+              className="rounded-xl border border-[#1C1E27] bg-[#07070C] p-2 px-3 text-xs font-bold text-slate-300 focus:outline-none cursor-pointer"
             >
               <option value="All">All Categories</option>
               {Object.keys(categoryBreakdown).map((cat) => (
@@ -160,79 +175,87 @@ export default function Budget() {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
-              <p className="text-xs font-medium text-slate-400">Budget</p>
-              <p className="mt-2 text-2xl font-bold">RM {selectedCategory === "All" ? budget.toFixed(2) : "N/A"}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+            <div className="rounded-xl bg-[#07070C]/50 border border-[#1C1E27]/60 p-4">
+              <span className="text-[10px] font-bold uppercase text-slate-500 block">Your Limit</span>
+              <p className="mt-1 text-lg font-bold text-white">
+                RM {selectedCategory === "All" ? budget.toFixed(2) : "N/A"}
+              </p>
             </div>
-            <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
-              <p className="text-xs font-medium text-slate-400">Total Spent</p>
-              <p className="mt-2 text-2xl font-bold text-indigo-300">
+            
+            <div className="rounded-xl bg-[#07070C]/50 border border-[#1C1E27]/60 p-4">
+              <span className="text-[10px] font-bold uppercase text-slate-500 block">Total Spent</span>
+              <p className="mt-1 text-lg font-bold text-violet-400">
                 RM {(selectedCategory === "All" ? spent : (categoryBreakdown[selectedCategory] || 0)).toFixed(2)}
               </p>
             </div>
-            <div className="rounded-2xl border border-white/5 bg-black/20 p-4 col-span-2 sm:col-span-1">
-              <p className="text-xs font-medium text-slate-400">Remaining</p>
-              <p className={`mt-2 text-2xl font-bold ${remaining < 0 ? "text-red-400" : "text-green-400"}`}>
-                RM {selectedCategory === "All" ? remaining.toFixed(2) : "Main Pool Only"}
+
+            <div className="rounded-xl bg-[#07070C]/50 border border-[#1C1E27]/60 p-4">
+              <span className="text-[10px] font-bold uppercase text-slate-500 block">Remaining</span>
+              <p className={`mt-1 text-lg font-bold ${remaining < 0 ? "text-red-400" : "text-emerald-400"}`}>
+                {selectedCategory === "All" ? `RM ${remaining.toFixed(2)}` : "Main Pool"}
               </p>
             </div>
           </div>
         </div>
+
       </div>
 
-      {/* Progress Core Bar Module */}
-      <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold tracking-tight">Budget Usage</h2>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold tracking-wider text-violet-300">
+      {/* Progress Bar Progress Tracker */}
+      <div className={`rounded-xl border ${currentTheme.border} bg-[#0D0E14] p-6 shadow-md transition-all`}>
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wide">Budget Used</h2>
+          </div>
+          <span className={`rounded-lg bg-[#07070C] border border-[#1C1E27] px-2.5 py-1 text-xs font-bold ${currentTheme.text}`}>
             {percentage.toFixed(1)}% Used
           </span>
         </div>
-        <div className="relative w-full h-6 rounded-full bg-slate-950/60 p-1 border border-white/5 overflow-hidden">
+        
+        <div className="relative w-full h-3 rounded-full bg-[#07070C] p-0.5 border border-[#1C1E27] overflow-hidden">
           <div
-            className={`h-full rounded-full bg-gradient-to-r ${getProgressColor()} shadow-[0_0_15px_rgba(0,0,0,0.5)] transition-all duration-1000 ease-out`}
+            className={`h-full rounded-full bg-gradient-to-r ${currentTheme.bar} transition-all duration-1000 ease-out`}
             style={{ width: `${percentage}%` }}
           />
         </div>
       </div>
 
-      {/* Advanced Insights & Forecast Estimations */}
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Left Card: Spending Rate Estimations */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-          <h2 className="text-lg font-bold tracking-tight mb-4 text-slate-300">Spending Forecast</h2>
-          <div className="space-y-4">
-            <div className="flex justify-between border-b border-white/5 pb-2">
-              <span className="text-sm text-slate-400">Average Daily Spending</span>
-              <span className="font-mono font-bold">RM {trackingMetrics.dailySpendingRate.toFixed(2)} / day</span>
+      {/* Forecast & Insights */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Forecast Card */}
+        <div className="border border-[#1C1E27] bg-[#0D0E14] rounded-2xl p-6 shadow-md">
+          <h2 className="text-sm font-bold text-white uppercase tracking-wide mb-4">Spending Estimations</h2>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-[#1C1E27]/60 pb-2">
+              <span className="text-xs text-slate-400">Daily Average Spending</span>
+              <span className="font-bold text-xs text-white">RM {trackingMetrics.dailySpendingRate.toFixed(2)} / day</span>
             </div>
-            <div className="flex justify-between border-b border-white/5 pb-2">
-              <span className="text-sm text-slate-400">Projected Total for Month End</span>
-              <span className="font-mono font-bold text-indigo-300">RM {trackingMetrics.projectedTotal.toFixed(2)}</span>
+            <div className="flex items-center justify-between border-b border-[#1C1E27]/60 pb-2">
+              <span className="text-xs text-slate-400">Projected Month-End Total</span>
+              <span className="font-bold text-sm text-violet-400">RM {trackingMetrics.projectedTotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between pt-1">
-              <span className="text-sm text-slate-400">Estimated Days Until Empty</span>
-              <span className={`font-bold ${trackingMetrics.daysRemainingToSpend < 5 ? "text-amber-400" : "text-emerald-400"}`}>
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-xs text-slate-400">Estimated Days Left</span>
+              <span className={`text-xs font-bold ${trackingMetrics.daysRemainingToSpend < 5 ? "text-amber-400" : "text-emerald-400"}`}>
                 ~ {trackingMetrics.daysRemainingToSpend} Days left
               </span>
             </div>
           </div>
         </div>
 
-        {/* Right Card: AI Logic Response Module */}
-        <div className={`rounded-3xl border p-6 backdrop-blur-xl flex flex-col justify-between ${insight.color}`}>
+        {/* AI Insight Card */}
+        <div className={`rounded-2xl border p-6 shadow-md backdrop-blur-xl flex flex-col justify-between ${insight.color}`}>
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">{insight.icon}</span>
-              <h2 className="text-lg font-bold tracking-tight">AI Budget Insight</h2>
+              <span className="text-lg">{insight.icon}</span>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wide">AI Budget Advice</h2>
             </div>
-            <p className="text-base leading-relaxed opacity-90">{insight.text}</p>
-          </div>
-          <div className="mt-6 text-xs opacity-50 font-mono tracking-widest uppercase">
-            Status: Fully Checked
+            <p className="text-sm text-slate-300 leading-relaxed font-medium">{insight.text}</p>
           </div>
         </div>
+
       </div>
 
     </div>
